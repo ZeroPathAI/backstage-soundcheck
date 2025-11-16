@@ -1,6 +1,6 @@
 {
   "name": "@zeropath/backstage-soundcheck",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Zeropath fact collector for Backstage Soundcheck.",
   "repository": {
     "type": "git",
