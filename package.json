@@ -2,6 +2,14 @@
   "name": "@zeropath/backstage-soundcheck",
   "version": "0.1.1",
   "description": "Zeropath fact collector for Backstage Soundcheck.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZeroPathAI/backstage-soundcheck.git"
+  },
+  "homepage": "https://github.com/ZeroPathAI/backstage-soundcheck#readme",
+  "bugs": {
+    "url": "https://github.com/ZeroPathAI/backstage-soundcheck/issues"
+  },
   "license": "Apache-2.0",
   "main": "dist/index.cjs.js",
   "types": "dist/index.d.ts",
