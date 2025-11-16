@@ -28,8 +28,8 @@ Provide credentials and collector scheduling via `app-config.yaml`:
 soundcheck:
   collectors:
     zeropath:
-      baseUrl: https://tenant.zeropath.com
-      organizationId: org_123456789
+      baseUrl: https://zeropath.com
+      organizationId: ${ZEROPATH_ORGANIZATION_ID}
       tokenId: ${ZEROPATH_TOKEN_ID}
       tokenSecret: ${ZEROPATH_TOKEN_SECRET}
       repositorySlugAnnotation: github.com/project-slug
