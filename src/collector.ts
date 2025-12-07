@@ -68,6 +68,7 @@ type ZeropathCollectorRuntimeConfig = {
 };
 
 type ZeropathRepository = {
+  id?: string | number;
   repositoryName?: string;
   name?: string;
   projectId?: string | number;
@@ -77,22 +78,38 @@ type ZeropathRepository = {
   isPrScanningEnabled?: boolean;
 };
 
-type ZeropathSecurityPosture = {
-  severity?: {
-    critical?: number;
-    high?: number;
-    medium?: number;
-    low?: number;
-  };
-  exposure?: {
-    oldestCriticalAge?: number;
-    oldestHighAge?: number;
-    oldestMediumAge?: number;
-    oldestLowAge?: number;
-  };
+type SeverityLevel = 'critical' | 'high' | 'medium' | 'low';
+
+type SeverityWindow = {
+  level: SeverityLevel;
+  min: number;
+  max: number;
 };
 
-type SecurityPostureMap = Map<string, ZeropathSecurityPosture>;
+type SeveritySnapshot = Record<
+  SeverityLevel,
+  {
+    count: number;
+    oldestAgeDays?: number;
+  }
+>;
+
+type IssuesSearchResponse = {
+  issues?: ZeropathIssue[];
+};
+
+type ZeropathIssue = {
+  createdAt?: string;
+  severity?: number | string;
+  score?: number | string;
+};
+
+const SEVERITY_WINDOWS: SeverityWindow[] = [
+  { level: 'critical', min: 90, max: 100 },
+  { level: 'high', min: 70, max: 89 },
+  { level: 'medium', min: 40, max: 69 },
+  { level: 'low', min: 10, max: 39 },
+];
 
 export class ZeropathFactCollector implements ConfigurableFactCollector {
   public readonly id = COLLECTOR_ID;
@@ -135,13 +152,7 @@ export class ZeropathFactCollector implements ConfigurableFactCollector {
 
     const repositories = await this.fetchRepositories();
     const repositoryMap = this.indexRepositories(repositories);
-
-    const projectIds = requiresPosture
-      ? this.collectProjectIds(repositoryMap)
-      : [];
-    const securityPostureByProjectId = requiresPosture
-      ? await this.fetchSecurityPosture(projectIds)
-      : new Map<string, ZeropathSecurityPosture>();
+    const severitySnapshotCache = new Map<string, SeveritySnapshot>();
 
     const timestamp = new Date().toISOString();
     const facts: Fact[] = [];
@@ -194,31 +205,29 @@ export class ZeropathFactCollector implements ConfigurableFactCollector {
         }
       }
 
-      if (requiresPosture && repository.projectId !== undefined) {
-        const posture = securityPostureByProjectId.get(
-          String(repository.projectId),
-        );
-        if (!posture) {
-          this.logger.debug(
-            `[Zeropath] No security posture data for project ${repository.projectId}`,
+      if (requiresPosture) {
+        const repositoryId = this.resolveRepositoryId(repository);
+        if (repositoryId === undefined) {
+          this.logger.warn(
+            `[Zeropath] Repository ${entitySlug} for entity ${entityRef} is missing an identifier; unable to collect issue severity facts.`,
           );
-        } else {
-          this.appendSeverityFacts({
-            entityRef,
-            factRefs,
-            facts,
-            posture,
-            timestamp,
-          });
-
-          this.appendExposureFacts({
-            entityRef,
-            factRefs,
-            facts,
-            posture,
-            timestamp,
-          });
+          continue;
         }
+
+        const cacheKey = this.toRepositoryKey(repositoryId);
+        let snapshot = severitySnapshotCache.get(cacheKey);
+        if (!snapshot) {
+          snapshot = await this.fetchSeveritySnapshot(repositoryId);
+          severitySnapshotCache.set(cacheKey, snapshot);
+        }
+
+        this.appendSeveritySnapshotFacts({
+          entityRef,
+          factRefs,
+          facts,
+          snapshot,
+          timestamp,
+        });
       }
     }
 
@@ -545,19 +554,6 @@ export class ZeropathFactCollector implements ConfigurableFactCollector {
     return map;
   }
 
-  private collectProjectIds(
-    repositoryMap: Map<string, ZeropathRepository>,
-  ): string[] {
-    const ids = new Set<string>();
-    for (const repository of repositoryMap.values()) {
-      if (repository.projectId === undefined || repository.projectId === null) {
-        continue;
-      }
-      ids.add(String(repository.projectId));
-    }
-    return Array.from(ids);
-  }
-
   private async fetchRepositories(): Promise<ZeropathRepository[]> {
     if (!this.runtimeConfig) {
       throw new Error('[Zeropath] Collector has not been configured');
@@ -576,214 +572,184 @@ export class ZeropathFactCollector implements ConfigurableFactCollector {
     return response;
   }
 
-  private async fetchSecurityPosture(
-    projectIds: string[],
-  ): Promise<SecurityPostureMap> {
-    if (projectIds.length === 0) {
-      return new Map();
+  private async fetchSeveritySnapshot(
+    repositoryId: string | number,
+  ): Promise<SeveritySnapshot> {
+    const summary: SeveritySnapshot = {
+      critical: { count: 0 },
+      high: { count: 0 },
+      medium: { count: 0 },
+      low: { count: 0 },
+    };
+    const issues = await this.fetchIssues(repositoryId);
+
+    for (const issue of issues) {
+      const severityValue = this.asNumber(issue.score);
+      const severityLevel = this.mapSeverityScoreToLevel(severityValue);
+      if (!severityLevel) {
+        this.logger.warn('[Zeropath] Issue severity unclassified', {
+          repositoryId: this.toRepositoryKey(repositoryId),
+          issue: {
+            createdAt: issue.createdAt,
+            score: issue.score,
+          },
+        });
+        continue;
+      }
+
+      const stats = summary[severityLevel];
+      stats.count += 1;
+
+      const age = issue.createdAt
+        ? this.calculateAgeInDays(issue.createdAt)
+        : undefined;
+      if (
+        typeof age === 'number' &&
+        (stats.oldestAgeDays === undefined || age > stats.oldestAgeDays)
+      ) {
+        stats.oldestAgeDays = age;
+      }
     }
 
-    const results = await Promise.all(
-      projectIds.map(async projectId => {
-        const payload = await this.post<Record<string, unknown>>(
-          '/api/v1/stats/securityPosture',
-          {
-            organizationId: this.runtimeConfig!.organizationId,
-            projectId,
-          },
-        );
+    this.logger.info('[Zeropath] Computed severity snapshot', {
+      repositoryId: this.toRepositoryKey(repositoryId),
+      summary,
+    });
 
-        const source =
-          Array.isArray(payload) && payload.length > 0 ? payload[0] : payload;
+    return summary;
+  }
 
-        if (!source || typeof source !== 'object') {
-          throw new Error(
-            `[Zeropath] Unexpected security posture payload for project ${projectId}`,
-          );
-        }
+  private async fetchIssues(
+    repositoryId: string | number,
+  ): Promise<ZeropathIssue[]> {
+    if (!this.runtimeConfig) {
+      throw new Error('[Zeropath] Collector has not been configured');
+    }
 
-        const posture: ZeropathSecurityPosture = {};
-
-        const repositoryRiskScores = this.extractRepositoryRiskScore(
-          source,
-          projectId,
-        );
-        if (repositoryRiskScores) {
-          posture.severity = repositoryRiskScores;
-        }
-
-        const exposure = this.extractExposure(source);
-        if (exposure) {
-          posture.exposure = exposure;
-        }
-
-        return [projectId, posture] as const;
-      }),
+    const response = await this.post<IssuesSearchResponse>(
+      '/api/v1/issues/search',
+      {
+        organizationId: this.runtimeConfig.organizationId,
+        repositoryIds: [this.toRepositoryKey(repositoryId)],
+        types: ['open'],
+        returnAll: true,
+        getCounts: false,
+        page: 1,
+        pageSize: 200,
+        sortBy: 'createdAt',
+        sortOrder: 'asc',
+      },
     );
 
-    return new Map(results);
+    const issues = Array.isArray(response.issues) ? response.issues : [];
+
+    this.logger.info('[Zeropath] Retrieved issues payload', {
+      repositoryId: this.toRepositoryKey(repositoryId),
+      issueCount: issues.length,
+      sample: issues.slice(0, 5).map(issue => ({
+        createdAt: issue.createdAt,
+        severity: issue.severity,
+      })),
+    });
+
+    return issues;
   }
 
-  private extractRepositoryRiskScore(
-    source: Record<string, unknown>,
-    projectId: string,
-  ):
-    | {
-        critical?: number;
-        high?: number;
-        medium?: number;
-        low?: number;
+  private mapSeverityScoreToLevel(
+    score: number | undefined,
+  ): SeverityLevel | undefined {
+    if (score === undefined || Number.isNaN(score)) {
+      return undefined;
+    }
+
+    for (const window of SEVERITY_WINDOWS) {
+      if (score >= window.min && score <= window.max) {
+        return window.level;
       }
-    | undefined {
-    const riskScores = source.repositoryRiskScores;
-    if (!Array.isArray(riskScores)) {
-      return undefined;
     }
 
-    const matchingScore = riskScores.find(it => {
-      if (!it || typeof it !== 'object') {
-        return false;
-      }
-      const candidate = (it as Record<string, unknown>).id;
-      return String(candidate ?? '') === projectId;
-    }) as Record<string, unknown> | undefined;
-
-    if (!matchingScore) {
-      return undefined;
-    }
-
-    const critical = this.asNumber(matchingScore.criticalIssues);
-    const high = this.asNumber(matchingScore.highIssues);
-    const medium = this.asNumber(matchingScore.mediumIssues);
-    const low = this.asNumber(matchingScore.lowIssues);
-
-    if (
-      critical === undefined &&
-      high === undefined &&
-      medium === undefined &&
-      low === undefined
-    ) {
-      return undefined;
-    }
-
-    return {
-      critical,
-      high,
-      medium,
-      low,
-    };
+    this.logger.debug('[Zeropath] Score outside severity windows', { score });
+    return undefined;
   }
 
-  private extractExposure(
-    source: Record<string, unknown>,
-  ):
-    | {
-        oldestCriticalAge?: number;
-        oldestHighAge?: number;
-        oldestMediumAge?: number;
-        oldestLowAge?: number;
-      }
-    | undefined {
-    const rawExposure = source.exposure;
-    if (!rawExposure || typeof rawExposure !== 'object') {
-      return undefined;
-    }
-
-    const exposureRecord = rawExposure as Record<string, unknown>;
-    const oldestCriticalAge = this.asNumber(exposureRecord.oldestCriticalAge);
-    const oldestHighAge = this.asNumber(exposureRecord.oldestHighAge);
-    const oldestMediumAge = this.asNumber(exposureRecord.oldestMediumAge);
-    const oldestLowAge = this.asNumber(exposureRecord.oldestLowAge);
-
-    if (
-      oldestCriticalAge === undefined &&
-      oldestHighAge === undefined &&
-      oldestMediumAge === undefined &&
-      oldestLowAge === undefined
-    ) {
-      return undefined;
-    }
-
-    return {
-      oldestCriticalAge,
-      oldestHighAge,
-      oldestMediumAge,
-      oldestLowAge,
-    };
-  }
-
-  private appendSeverityFacts(options: {
+  private appendSeveritySnapshotFacts(options: {
     facts: Fact[];
     factRefs: ReadonlyArray<string>;
-    posture: ZeropathSecurityPosture;
+    snapshot: SeveritySnapshot;
     entityRef: string;
     timestamp: string;
   }): void {
-    const { facts, factRefs, posture, entityRef, timestamp } = options;
-    const severity = posture.severity;
-    if (!severity) {
-      return;
-    }
+    const { facts, factRefs, snapshot, entityRef, timestamp } = options;
 
-    const add = (
-      factRef: FactRefString,
-      value: number | undefined,
-    ): void => {
-      if (!factRefs.includes(factRef)) {
-        return;
-      }
-      if (typeof value !== 'number') {
-        return;
-      }
-      facts.push({
-        factRef,
-        entityRef,
-        data: { value },
-        timestamp,
-      });
+    const config: Record<
+      SeverityLevel,
+      { countRef: FactRefString; ageRef: FactRefString }
+    > = {
+      critical: {
+        countRef: FACT_REFS.ISSUES_CRITICAL_COUNT,
+        ageRef: FACT_REFS.OLDEST_CRITICAL_AGE,
+      },
+      high: {
+        countRef: FACT_REFS.ISSUES_HIGH_COUNT,
+        ageRef: FACT_REFS.OLDEST_HIGH_AGE,
+      },
+      medium: {
+        countRef: FACT_REFS.ISSUES_MEDIUM_COUNT,
+        ageRef: FACT_REFS.OLDEST_MEDIUM_AGE,
+      },
+      low: {
+        countRef: FACT_REFS.ISSUES_LOW_COUNT,
+        ageRef: FACT_REFS.OLDEST_LOW_AGE,
+      },
     };
 
-    add(FACT_REFS.ISSUES_CRITICAL_COUNT, severity.critical);
-    add(FACT_REFS.ISSUES_HIGH_COUNT, severity.high);
-    add(FACT_REFS.ISSUES_MEDIUM_COUNT, severity.medium);
-    add(FACT_REFS.ISSUES_LOW_COUNT, severity.low);
+    for (const window of SEVERITY_WINDOWS) {
+      const stats = snapshot[window.level];
+      const { countRef, ageRef } = config[window.level];
+
+      if (factRefs.includes(countRef)) {
+        facts.push({
+          factRef: countRef,
+          entityRef,
+          data: { value: stats.count },
+          timestamp,
+        });
+      }
+
+      if (
+        factRefs.includes(ageRef) &&
+        typeof stats.oldestAgeDays === 'number'
+      ) {
+        facts.push({
+          factRef: ageRef,
+          entityRef,
+          data: { value: stats.oldestAgeDays },
+          timestamp,
+        });
+      }
+    }
   }
 
-  private appendExposureFacts(options: {
-    facts: Fact[];
-    factRefs: ReadonlyArray<string>;
-    posture: ZeropathSecurityPosture;
-    entityRef: string;
-    timestamp: string;
-  }): void {
-    const { facts, factRefs, posture, entityRef, timestamp } = options;
-    const exposure = posture.exposure;
-    if (!exposure) {
-      return;
+  private resolveRepositoryId(
+    repository: ZeropathRepository,
+  ): string | number | undefined {
+    return repository.id;
+  }
+
+  private toRepositoryKey(repositoryId: string | number): string {
+    return typeof repositoryId === 'string' ? repositoryId : String(repositoryId);
+  }
+
+  private calculateAgeInDays(createdAt: string): number | undefined {
+    const timestamp = Date.parse(createdAt);
+    if (Number.isNaN(timestamp)) {
+      return undefined;
     }
-
-    const add = (
-      factRef: FactRefString,
-      value: number | undefined,
-    ): void => {
-      if (!factRefs.includes(factRef)) {
-        return;
-      }
-      if (typeof value !== 'number') {
-        return;
-      }
-      facts.push({
-        factRef,
-        entityRef,
-        data: { value },
-        timestamp,
-      });
-    };
-
-    add(FACT_REFS.OLDEST_CRITICAL_AGE, exposure.oldestCriticalAge);
-    add(FACT_REFS.OLDEST_HIGH_AGE, exposure.oldestHighAge);
-    add(FACT_REFS.OLDEST_MEDIUM_AGE, exposure.oldestMediumAge);
-    add(FACT_REFS.OLDEST_LOW_AGE, exposure.oldestLowAge);
+    const diffMs = Date.now() - timestamp;
+    if (diffMs < 0) {
+      return 0;
+    }
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
   }
 
   private async post<T>(path: string, body: unknown): Promise<T> {
@@ -803,8 +769,17 @@ export class ZeropathFactCollector implements ConfigurableFactCollector {
     });
 
     if (!response.ok) {
+      let details: string | undefined;
+      try {
+        details = await response.text();
+      } catch (error) {
+        this.logger.debug('[Zeropath] Failed to read error response body', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      const suffix = details && details.trim().length > 0 ? `: ${details}` : '';
       throw new Error(
-        `[Zeropath] Request to ${url} failed with status ${response.status}`,
+        `[Zeropath] Request to ${url} failed with status ${response.status}${suffix}`,
       );
     }
 
