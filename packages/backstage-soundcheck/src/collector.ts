@@ -91,6 +91,8 @@ type ZeropathIssue = {
 export class ZeropathFactCollector implements ConfigurableFactCollector {
   public readonly id = COLLECTOR_ID;
   public readonly name = 'Zeropath';
+  public readonly description =
+    'Collects security posture facts from ZeroPath including issue counts, severity breakdown, and PR scanning status.';
 
   private readonly logger: LoggerService;
   private rawConfig?: JsonValue;
@@ -536,11 +538,10 @@ export class ZeropathFactCollector implements ConfigurableFactCollector {
       throw new Error('[Zeropath] Collector has not been configured');
     }
 
-    const response = await this.post<
-      ZeropathRepository[]
-    >('/api/v1/repositories/list', {
-      organizationId: this.runtimeConfig.organizationId,
-    });
+    const response = await this.post<ZeropathRepository[]>(
+      '/api/v1/repositories/list',
+      { organizationId: this.runtimeConfig.organizationId },
+    );
 
     if (!Array.isArray(response)) {
       throw new Error('[Zeropath] Repository list response is not an array');
@@ -603,33 +604,42 @@ export class ZeropathFactCollector implements ConfigurableFactCollector {
       throw new Error('[Zeropath] Collector has not been configured');
     }
 
-    const response = await this.post<IssuesSearchResponse>(
-      '/api/v1/issues/search',
-      {
-        organizationId: this.runtimeConfig.organizationId,
-        repositoryIds: [this.toRepositoryKey(repositoryId)],
-        types: ['open'],
-        returnAll: true,
-        getCounts: false,
-        page: 1,
-        pageSize: 200,
-        sortBy: 'createdAt',
-        sortOrder: 'asc',
-      },
-    );
+    const allIssues: ZeropathIssue[] = [];
+    let page = 1;
+    const pageSize = 200;
 
-    const issues = Array.isArray(response.issues) ? response.issues : [];
+    while (true) {
+      const response = await this.post<IssuesSearchResponse>(
+        '/api/v1/issues/search',
+        {
+          organizationId: this.runtimeConfig.organizationId,
+          repositoryIds: [this.toRepositoryKey(repositoryId)],
+          types: ['open'],
+          returnAll: false,
+          getCounts: false,
+          page,
+          pageSize,
+          sortBy: 'createdAt',
+          sortOrder: 'asc',
+        },
+      );
 
-    this.logger.info('[Zeropath] Retrieved issues payload', {
+      const issues = Array.isArray(response.issues) ? response.issues : [];
+      allIssues.push(...issues);
+
+      if (issues.length < pageSize) {
+        break; // Last page
+      }
+      page++;
+    }
+
+    this.logger.debug('[Zeropath] Retrieved all issues', {
       repositoryId: this.toRepositoryKey(repositoryId),
-      issueCount: issues.length,
-      sample: issues.slice(0, 5).map(issue => ({
-        createdAt: issue.createdAt,
-        severity: issue.severity,
-      })),
+      totalIssues: allIssues.length,
+      pages: page,
     });
 
-    return issues;
+    return allIssues;
   }
 
   private mapSeverityScoreToLevel(

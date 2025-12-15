@@ -1,6 +1,14 @@
 soundcheck:
   collectors:
     zeropath:
+      frequency:
+        minutes: 30
+      initialDelay:
+        seconds: 30
+      batchSize: 50
+      cache:
+        duration:
+          hours: 1
       collects:
         - filter:
             - kind:
@@ -9,8 +17,8 @@ soundcheck:
   checks:
     - id: zeropath-linked
       ownerEntityRef: group:default/guests
-      name: Zeropath repository linked
-      description: Ensures every component maps to a Zeropath repository.
+      name: ZeroPath repository linked
+      description: Ensures every component maps to a ZeroPath repository.
       rule:
         all:
           - factRef: zeropath:default/is_configured
@@ -20,14 +28,13 @@ soundcheck:
       filter:
         - kind:
             - component
-      passedMessage: Zeropath repository located for this entity.
-      failedMessage: >-
-        Add a github.com/project-slug annotation that matches the Zeropath repository slug.
+      passedMessage: '{{ entity.metadata.name }} has a linked ZeroPath repository.'
+      failedMessage: '{{ entity.metadata.name }} needs a github.com/project-slug annotation matching the ZeroPath repository slug.'
 
     - id: zeropath-pr-scanning
       ownerEntityRef: group:default/guests
-      name: Zeropath PR scanning enabled
-      description: Requires Zeropath PR scanning to be enabled for the repository.
+      name: ZeroPath PR scanning enabled
+      description: Requires ZeroPath PR scanning to be enabled for the repository.
       rule:
         any:
           - all:
@@ -44,18 +51,17 @@ soundcheck:
                 path: $.value
                 operator: equal
                 value: false
-      notApplicableMessage: >-
-        Repository is not linked to Zeropath. Ensure the github.com/project-slug annotation matches the Zeropath repository slug.
+      notApplicableMessage: '{{ entity.metadata.name }} is not linked to ZeroPath.'
       filter:
         - kind:
             - component
-      passedMessage: Zeropath PR scanning is enabled.
-      failedMessage: Enable Zeropath PR scanning for this repository.
+      passedMessage: '{{ entity.metadata.name }} has ZeroPath PR scanning enabled.'
+      failedMessage: '{{ entity.metadata.name }} needs ZeroPath PR scanning enabled.'
 
     - id: zeropath-critical-zero
       ownerEntityRef: group:default/guests
-      name: Critical Zeropath issues remediated
-      description: Fails if Zeropath reports any critical issues.
+      name: Critical ZeroPath issues remediated
+      description: Fails if ZeroPath reports any critical issues.
       rule:
         any:
           - all:
@@ -72,18 +78,17 @@ soundcheck:
                 path: $.value
                 operator: equal
                 value: false
-      notApplicableMessage: >-
-        Repository is not linked to Zeropath. Ensure the github.com/project-slug annotation matches the Zeropath repository slug.
+      notApplicableMessage: '{{ entity.metadata.name }} is not linked to ZeroPath.'
       filter:
         - kind:
             - component
-      passedMessage: No critical Zeropath issues remain.
-      failedMessage: Resolve the critical Zeropath issues reported by Zeropath.
+      passedMessage: '{{ entity.metadata.name }} has no critical ZeroPath issues.'
+      failedMessage: '{{ entity.metadata.name }} has critical ZeroPath issues that need remediation.'
 
     - id: zeropath-high-zero
       ownerEntityRef: group:default/guests
-      name: High Zeropath issues remediated
-      description: Fails if Zeropath reports any high severity issues.
+      name: High ZeroPath issues remediated
+      description: Fails if ZeroPath reports any high severity issues.
       rule:
         any:
           - all:
@@ -100,18 +105,17 @@ soundcheck:
                 path: $.value
                 operator: equal
                 value: false
-      notApplicableMessage: >-
-        Repository is not linked to Zeropath. Ensure the github.com/project-slug annotation matches the Zeropath repository slug.
+      notApplicableMessage: '{{ entity.metadata.name }} is not linked to ZeroPath.'
       filter:
         - kind:
             - component
-      passedMessage: No high severity Zeropath issues remain.
-      failedMessage: Resolve the high severity Zeropath issues reported by Zeropath.
+      passedMessage: '{{ entity.metadata.name }} has no high severity ZeroPath issues.'
+      failedMessage: '{{ entity.metadata.name }} has high severity ZeroPath issues that need remediation.'
 
   tracks:
     - id: zeropath-security-posture
-      name: Zeropath Security Posture
-      description: Ensures catalog components stay connected to Zeropath and have no outstanding high or critical issues.
+      name: ZeroPath Security Posture
+      description: Ensures catalog components stay connected to ZeroPath and have no outstanding high or critical issues.
       ownerEntityRef: group:default/guests
       filter:
         - kind:
@@ -119,21 +123,21 @@ soundcheck:
       levels:
         - ordinal: 1
           name: Connected
-          description: Entity is linked to a Zeropath repository.
+          description: Entity is linked to a ZeroPath repository.
           checks:
             - id: zeropath-linked
-              name: Zeropath repository linked
-              description: Confirms the component has a matching Zeropath repository.
+              name: ZeroPath repository linked
+              description: Confirms the component has a matching ZeroPath repository.
         - ordinal: 2
           name: Healthy posture
-          description: Zeropath PR scanning is enabled and there are no outstanding high or critical issues.
+          description: ZeroPath PR scanning is enabled and there are no outstanding high or critical issues.
           checks:
             - id: zeropath-pr-scanning
-              name: Zeropath PR scanning enabled
-              description: Zeropath PR scanning is enabled for the repository.
+              name: ZeroPath PR scanning enabled
+              description: ZeroPath PR scanning is enabled for the repository.
             - id: zeropath-critical-zero
-              name: Critical Zeropath issues remediated
-              description: Zeropath reports zero critical issues.
+              name: Critical ZeroPath issues remediated
+              description: ZeroPath reports zero critical issues.
             - id: zeropath-high-zero
-              name: High Zeropath issues remediated
-              description: Zeropath reports zero high severity issues.
+              name: High ZeroPath issues remediated
+              description: ZeroPath reports zero high severity issues.
