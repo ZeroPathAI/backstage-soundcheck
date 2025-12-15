@@ -1,0 +1,124 @@
+---
+# ZeroPath Demo Entities
+# These entities map to real repositories in your ZeroPath dashboard
+
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: zeropath-demo
+  description: Demo system for ZeroPath security integration
+spec:
+  owner: guests
+
+---
+# AWSGoat - Vulnerable AWS infrastructure (55 open issues)
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: aws-goat
+  description: A Damn Vulnerable AWS Infrastructure for security testing
+  annotations:
+    github.com/project-slug: privzpt/AWSGoat
+  tags:
+    - aws
+    - security
+    - vulnerable
+spec:
+  type: service
+  lifecycle: production
+  owner: guests
+  system: zeropath-demo
+
+---
+# Juice Shop - Famous OWASP vulnerable app (48 open issues)
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: juice-shop
+  description: OWASP Juice Shop - intentionally insecure web application
+  annotations:
+    github.com/project-slug: juice-shop/juice-shop
+  tags:
+    - owasp
+    - nodejs
+    - security
+spec:
+  type: website
+  lifecycle: production
+  owner: guests
+  system: zeropath-demo
+
+---
+# HelloShiftLeft Scala - Vulnerable Scala app (16 open issues)
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: helloshiftleft-scala
+  description: Scala application with security vulnerabilities for testing
+  annotations:
+    github.com/project-slug: privzpt/HelloShiftLeft-Scala
+  tags:
+    - scala
+    - security
+spec:
+  type: service
+  lifecycle: production
+  owner: guests
+  system: zeropath-demo
+
+---
+# SQL Injection Training App (10 open issues)
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: sql-injection-training
+  description: SQL injection training application
+  annotations:
+    github.com/project-slug: privzpt/sqlinjection-training-app
+  tags:
+    - sql
+    - security
+    - training
+spec:
+  type: service
+  lifecycle: production
+  owner: guests
+  system: zeropath-demo
+
+---
+# UnSAFE Bank - Vulnerable mobile banking app (8 open issues)
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: unsafe-bank
+  description: Vulnerable mobile banking application for security testing
+  annotations:
+    github.com/project-slug: privzpt/UnSAFE_Bank
+  tags:
+    - mobile
+    - banking
+    - security
+spec:
+  type: service
+  lifecycle: production
+  owner: guests
+  system: zeropath-demo
+
+---
+# LiteLLM - AI proxy with many issues (106 open issues)
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: litellm
+  description: LiteLLM - AI LLM proxy server
+  annotations:
+    github.com/project-slug: BerriAI/litellm
+  tags:
+    - ai
+    - llm
+    - python
+spec:
+  type: service
+  lifecycle: production
+  owner: guests
+  system: zeropath-demo

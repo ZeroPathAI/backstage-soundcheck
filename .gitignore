@@ -5,3 +5,14 @@ dist-types
 yarn-error.log
 package-lock.json
 npm-debug.log
+
+# OS files
+.DS_Store
+
+# IDE files
+.idea/
+.vscode/
+
+# Environment files
+.env
+.env.local

@@ -9,10 +9,17 @@ import {
 import { LoggerService } from '@backstage/backend-plugin-api';
 import { JsonObject, JsonValue } from '@backstage/types';
 import { Config, ConfigReader } from '@backstage/config';
+import {
+  DEFAULT_REPOSITORY_ANNOTATION,
+  SEVERITY_WINDOWS,
+  formatSlugWithPrefix,
+  type SeverityLevel,
+  type SeveritySnapshot,
+  type ZeroPathRepository as CommonZeroPathRepository,
+} from '@zeropath/backstage-plugin-zeropath-common';
 
 const COLLECTOR_ID = 'zeropath';
 const DEFAULT_SCOPE = 'default';
-const DEFAULT_REPOSITORY_ANNOTATION = 'github.com/project-slug';
 
 const FACT_NAMES = {
   IS_CONFIGURED: 'is_configured',
@@ -67,33 +74,10 @@ type ZeropathCollectorRuntimeConfig = {
   repositorySlugPrefix?: string;
 };
 
-type ZeropathRepository = {
-  id?: string | number;
-  repositoryName?: string;
-  name?: string;
-  projectId?: string | number;
-  issueCounts?: {
-    open?: number;
-  };
-  isPrScanningEnabled?: boolean;
-};
+// Local type alias for the repository type used in this collector
+type ZeropathRepository = CommonZeroPathRepository;
 
-type SeverityLevel = 'critical' | 'high' | 'medium' | 'low';
-
-type SeverityWindow = {
-  level: SeverityLevel;
-  min: number;
-  max: number;
-};
-
-type SeveritySnapshot = Record<
-  SeverityLevel,
-  {
-    count: number;
-    oldestAgeDays?: number;
-  }
->;
-
+// Local types specific to this collector
 type IssuesSearchResponse = {
   issues?: ZeropathIssue[];
 };
@@ -103,13 +87,6 @@ type ZeropathIssue = {
   severity?: number | string;
   score?: number | string;
 };
-
-const SEVERITY_WINDOWS: SeverityWindow[] = [
-  { level: 'critical', min: 90, max: 100 },
-  { level: 'high', min: 70, max: 89 },
-  { level: 'medium', min: 40, max: 69 },
-  { level: 'low', min: 10, max: 39 },
-];
 
 export class ZeropathFactCollector implements ConfigurableFactCollector {
   public readonly id = COLLECTOR_ID;
@@ -799,17 +776,7 @@ export class ZeropathFactCollector implements ConfigurableFactCollector {
   }
 
   private formatSlug(value: string): string | undefined {
-    const trimmed = value.trim().replace(/\.git$/i, '');
-    if (!trimmed) {
-      return undefined;
-    }
-    if (trimmed.includes('/')) {
-      return trimmed;
-    }
-    if (!this.runtimeConfig?.repositorySlugPrefix) {
-      return trimmed;
-    }
-    return `${this.runtimeConfig.repositorySlugPrefix}/${trimmed}`;
+    return formatSlugWithPrefix(value, this.runtimeConfig?.repositorySlugPrefix);
   }
 
   private resolveEntityRepositorySlug(entity: Entity): string | undefined {
