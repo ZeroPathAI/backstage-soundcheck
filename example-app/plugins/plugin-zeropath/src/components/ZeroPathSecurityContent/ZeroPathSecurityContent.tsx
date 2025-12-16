@@ -30,29 +30,48 @@ import { ZeroPathInfoCard } from '../ZeroPathInfoCard';
 import { ZeroPathSummaryCards } from '../ZeroPathSummaryCards';
 
 const useStyles = makeStyles(theme => ({
-  topSection: {
+  root: {
+    padding: theme.spacing(2, 2, 0, 2),
+  },
+  cardsSection: {
     marginBottom: theme.spacing(3),
   },
   container: {
     width: '100%',
   },
   fileCell: {
-    fontFamily: 'monospace',
-    fontSize: '0.85rem',
+    fontFamily: '"Roboto Mono", monospace',
+    fontSize: '0.8rem',
+    color: theme.palette.text.primary,
   },
   vulnCell: {
-    maxWidth: 300,
+    maxWidth: 350,
+  },
+  vulnTitle: {
+    fontWeight: 600,
+    fontSize: '0.875rem',
+    marginBottom: theme.spacing(0.5),
+  },
+  vulnMeta: {
+    fontSize: '0.75rem',
   },
   statusChip: {
     textTransform: 'capitalize',
+    fontWeight: 500,
   },
   linkIcon: {
-    fontSize: '0.9rem',
+    fontSize: '0.875rem',
     marginLeft: 4,
     verticalAlign: 'middle',
   },
-  issuesSection: {
-    marginTop: theme.spacing(3),
+  tableSection: {
+    '& .MuiPaper-root': {
+      borderRadius: theme.shape.borderRadius * 2,
+      boxShadow: theme.shadows[1],
+    },
+  },
+  emptyStateWrapper: {
+    padding: theme.spacing(4),
   },
 }));
 
@@ -101,10 +120,10 @@ export const ZeroPathSecurityContent = () => {
       field: 'generatedTitle',
       render: row => (
         <Box className={classes.vulnCell}>
-          <Typography variant="body2" style={{ fontWeight: 500 }}>
+          <Typography className={classes.vulnTitle}>
             {row.generatedTitle || row.vulnClass}
           </Typography>
-          <Typography variant="caption" color="textSecondary">
+          <Typography className={classes.vulnMeta} color="textSecondary">
             {row.vulnCategory}
             {row.cwes && row.cwes.length > 0 && ` - ${row.cwes[0]}`}
           </Typography>
@@ -160,7 +179,7 @@ export const ZeroPathSecurityContent = () => {
         if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
         return `${Math.floor(diffDays / 365)} years ago`;
       },
-      width: '100px',
+      width: '120px',
     },
     {
       title: 'Actions',
@@ -175,17 +194,19 @@ export const ZeroPathSecurityContent = () => {
 
   if (missingAnnotation) {
     return (
-      <Content>
+      <Content className={classes.root}>
         <ContentHeader title="Security">
           <SupportButton>
             View and manage security vulnerabilities detected by ZeroPath.
           </SupportButton>
         </ContentHeader>
-        <EmptyState
-          title="Missing annotation"
-          description="Add the github.com/project-slug annotation to this entity to enable ZeroPath security scanning."
-          missing="field"
-        />
+        <Box className={classes.emptyStateWrapper}>
+          <EmptyState
+            title="Missing annotation"
+            description="Add the github.com/project-slug annotation to this entity to enable ZeroPath security scanning."
+            missing="field"
+          />
+        </Box>
       </Content>
     );
   }
@@ -195,7 +216,7 @@ export const ZeroPathSecurityContent = () => {
 
   if (loading) {
     return (
-      <Content>
+      <Content className={classes.root}>
         <ContentHeader title="Security" />
         <Progress />
       </Content>
@@ -204,7 +225,7 @@ export const ZeroPathSecurityContent = () => {
 
   if (error) {
     return (
-      <Content>
+      <Content className={classes.root}>
         <ContentHeader title="Security" />
         <ResponseErrorPanel error={error} />
       </Content>
@@ -213,17 +234,19 @@ export const ZeroPathSecurityContent = () => {
 
   if (!repository) {
     return (
-      <Content>
+      <Content className={classes.root}>
         <ContentHeader title="Security">
           <SupportButton>
             View and manage security vulnerabilities detected by ZeroPath.
           </SupportButton>
         </ContentHeader>
-        <EmptyState
-          title="Repository not found"
-          description="This repository is not connected to ZeroPath. Connect it in your ZeroPath dashboard to see security issues."
-          missing="data"
-        />
+        <Box className={classes.emptyStateWrapper}>
+          <EmptyState
+            title="Repository not found"
+            description="This repository is not connected to ZeroPath. Connect it in your ZeroPath dashboard to see security issues."
+            missing="data"
+          />
+        </Box>
       </Content>
     );
   }
@@ -232,22 +255,19 @@ export const ZeroPathSecurityContent = () => {
   const counts = severityCounts ?? { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
 
   return (
-    <Content>
+    <Content className={classes.root}>
       <ContentHeader title="Security">
         <SupportButton>
           View and manage security vulnerabilities detected by ZeroPath.
         </SupportButton>
       </ContentHeader>
 
-      {/* Top Section: Info Card + Summary Cards (Vertical Layout) */}
-      <Box className={classes.topSection}>
+      {/* Cards Section */}
+      <Box className={classes.cardsSection}>
         <Grid container spacing={3}>
-          {/* Info Card - Full width */}
           <Grid item xs={12}>
             <ZeroPathInfoCard repository={repository} />
           </Grid>
-
-          {/* Security Issues Card - Full width */}
           <Grid item xs={12}>
             <ZeroPathSummaryCards
               repository={repository}
@@ -258,13 +278,15 @@ export const ZeroPathSecurityContent = () => {
       </Box>
 
       {/* Issues Table */}
-      <Box className={classes.issuesSection}>
+      <Box className={classes.tableSection}>
         {issues.length === 0 ? (
-          <EmptyState
-            title="No open issues - great job!"
-            description="ZeroPath hasn't detected any open security issues in this repository. Keep up the good work!"
-            missing="data"
-          />
+          <Box className={classes.emptyStateWrapper}>
+            <EmptyState
+              title="No open issues"
+              description="ZeroPath hasn't detected any open security issues in this repository."
+              missing="data"
+            />
+          </Box>
         ) : (
           <Box className={classes.container}>
             <Table

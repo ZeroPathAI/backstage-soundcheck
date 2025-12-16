@@ -11,18 +11,22 @@ import { ZeroPathRepository, IssueCounts } from '@internal/plugin-zeropath-commo
 import { getSeverityColor } from '../../api/types';
 
 const useStyles = makeStyles(theme => ({
+  cardContent: {
+    padding: theme.spacing(0.5, 0),
+  },
   severityBox: {
     textAlign: 'center',
-    padding: theme.spacing(1),
+    padding: theme.spacing(0.5, 1),
     borderRadius: theme.shape.borderRadius,
-    transition: 'background-color 0.2s',
+    transition: 'all 0.2s ease-in-out',
+    cursor: 'default',
     '&:hover': {
       backgroundColor: theme.palette.action.hover,
     },
   },
   countText: {
-    fontWeight: 'bold',
-    fontSize: '1.75rem',
+    fontWeight: 700,
+    fontSize: '1.5rem',
     lineHeight: 1.2,
   },
   critical: {
@@ -41,11 +45,19 @@ const useStyles = makeStyles(theme => ({
     fontSize: '0.75rem',
     color: theme.palette.text.secondary,
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    letterSpacing: '0.75px',
+    fontWeight: 600,
+  },
+  titleWrapper: {
+    display: 'flex',
+    alignItems: 'center',
   },
   icon: {
     marginRight: theme.spacing(1),
-    verticalAlign: 'middle',
+    color: theme.palette.primary.main,
+  },
+  subheader: {
+    color: theme.palette.text.secondary,
   },
 }));
 
@@ -64,55 +76,61 @@ export const ZeroPathSummaryCards = ({
   return (
     <InfoCard
       title={
-        <Box display="flex" alignItems="center">
+        <Box className={classes.titleWrapper}>
           <SecurityIcon className={classes.icon} />
-          Security Issues
+          <Typography variant="h6">Security Issues</Typography>
         </Box>
       }
-      subheader={`${totalIssues} open ${totalIssues === 1 ? 'issue' : 'issues'}`}
+      subheader={
+        <Typography variant="body2" className={classes.subheader}>
+          {totalIssues} open {totalIssues === 1 ? 'issue' : 'issues'}
+        </Typography>
+      }
     >
-      <Grid container spacing={1}>
-        <Grid item xs={3}>
-          <Tooltip title="Score 90-100" placement="top">
-            <Box className={classes.severityBox}>
-              <Typography className={`${classes.countText} ${classes.critical}`}>
-                {severityCounts?.critical ?? 0}
-              </Typography>
-              <Typography className={classes.label}>Critical</Typography>
-            </Box>
-          </Tooltip>
+      <Box className={classes.cardContent}>
+        <Grid container spacing={2}>
+          <Grid item xs={6} sm={3}>
+            <Tooltip title="Score 90-100" placement="top" arrow>
+              <Box className={classes.severityBox}>
+                <Typography className={`${classes.countText} ${classes.critical}`}>
+                  {severityCounts?.critical ?? 0}
+                </Typography>
+                <Typography className={classes.label}>Critical</Typography>
+              </Box>
+            </Tooltip>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Tooltip title="Score 70-89" placement="top" arrow>
+              <Box className={classes.severityBox}>
+                <Typography className={`${classes.countText} ${classes.high}`}>
+                  {severityCounts?.high ?? 0}
+                </Typography>
+                <Typography className={classes.label}>High</Typography>
+              </Box>
+            </Tooltip>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Tooltip title="Score 40-69" placement="top" arrow>
+              <Box className={classes.severityBox}>
+                <Typography className={`${classes.countText} ${classes.medium}`}>
+                  {severityCounts?.medium ?? 0}
+                </Typography>
+                <Typography className={classes.label}>Medium</Typography>
+              </Box>
+            </Tooltip>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Tooltip title="Score 10-39" placement="top" arrow>
+              <Box className={classes.severityBox}>
+                <Typography className={`${classes.countText} ${classes.low}`}>
+                  {severityCounts?.low ?? 0}
+                </Typography>
+                <Typography className={classes.label}>Low</Typography>
+              </Box>
+            </Tooltip>
+          </Grid>
         </Grid>
-        <Grid item xs={3}>
-          <Tooltip title="Score 70-89" placement="top">
-            <Box className={classes.severityBox}>
-              <Typography className={`${classes.countText} ${classes.high}`}>
-                {severityCounts?.high ?? 0}
-              </Typography>
-              <Typography className={classes.label}>High</Typography>
-            </Box>
-          </Tooltip>
-        </Grid>
-        <Grid item xs={3}>
-          <Tooltip title="Score 40-69" placement="top">
-            <Box className={classes.severityBox}>
-              <Typography className={`${classes.countText} ${classes.medium}`}>
-                {severityCounts?.medium ?? 0}
-              </Typography>
-              <Typography className={classes.label}>Medium</Typography>
-            </Box>
-          </Tooltip>
-        </Grid>
-        <Grid item xs={3}>
-          <Tooltip title="Score 10-39" placement="top">
-            <Box className={classes.severityBox}>
-              <Typography className={`${classes.countText} ${classes.low}`}>
-                {severityCounts?.low ?? 0}
-              </Typography>
-              <Typography className={classes.label}>Low</Typography>
-            </Box>
-          </Tooltip>
-        </Grid>
-      </Grid>
+      </Box>
     </InfoCard>
   );
 };

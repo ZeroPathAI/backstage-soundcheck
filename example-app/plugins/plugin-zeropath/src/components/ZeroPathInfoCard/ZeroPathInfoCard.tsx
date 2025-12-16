@@ -2,23 +2,44 @@ import {
   InfoCard,
   StructuredMetadataTable,
 } from '@backstage/core-components';
-import { Box, Chip, makeStyles } from '@material-ui/core';
+import { Box, Chip, Typography, makeStyles } from '@material-ui/core';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import CancelIcon from '@material-ui/icons/Cancel';
+import InfoIcon from '@material-ui/icons/Info';
 import { ZeroPathRepository } from '@internal/plugin-zeropath-common';
 
 const useStyles = makeStyles(theme => ({
   enabledChip: {
     backgroundColor: theme.palette.success.main,
     color: theme.palette.success.contrastText,
+    fontWeight: 600,
   },
   disabledChip: {
-    backgroundColor: theme.palette.grey[500],
+    backgroundColor: theme.palette.grey[400],
     color: theme.palette.common.white,
+    fontWeight: 600,
   },
   icon: {
     fontSize: '1rem',
-    marginRight: theme.spacing(0.5),
+  },
+  titleWrapper: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  titleIcon: {
+    marginRight: theme.spacing(1),
+    color: theme.palette.primary.main,
+  },
+  metadataWrapper: {
+    '& table': {
+      '& td': {
+        padding: theme.spacing(1.5, 2),
+        borderBottom: `1px solid ${theme.palette.divider}`,
+      },
+      '& tr:last-child td': {
+        borderBottom: 'none',
+      },
+    },
   },
 }));
 
@@ -73,8 +94,15 @@ export const ZeroPathInfoCard = ({ repository }: ZeroPathInfoCardProps) => {
   }
 
   return (
-    <InfoCard title={repository.repositoryName || repository.name || 'Repository Info'}>
-      <Box>
+    <InfoCard
+      title={
+        <Box className={classes.titleWrapper}>
+          <InfoIcon className={classes.titleIcon} />
+          <Typography variant="h6">Repository Info</Typography>
+        </Box>
+      }
+    >
+      <Box className={classes.metadataWrapper}>
         <StructuredMetadataTable metadata={metadata} />
       </Box>
     </InfoCard>
