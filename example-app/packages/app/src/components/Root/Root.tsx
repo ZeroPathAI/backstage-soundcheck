@@ -1,6 +1,7 @@
 import { PropsWithChildren } from 'react';
 import { makeStyles } from '@material-ui/core';
 import CategoryIcon from '@material-ui/icons/Category';
+import SecurityIcon from '@material-ui/icons/Security';
 import LogoFull from './LogoFull';
 import LogoIcon from './LogoIcon';
 import {
@@ -60,6 +61,7 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
       <SidebarDivider />
       <SidebarGroup label="Menu" icon={<MenuIcon />}>
         <SidebarItem icon={CategoryIcon} to="catalog" text="Catalog" />
+        <SidebarItem icon={SecurityIcon} to="zeropath" text="Security" />
       </SidebarGroup>
       <SidebarSpace />
       <SidebarDivider />

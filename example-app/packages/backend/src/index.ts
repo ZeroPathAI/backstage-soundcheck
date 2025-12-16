@@ -19,6 +19,7 @@ backend.add(import('@backstage/plugin-auth-backend-module-guest-provider'));
 backend.add(import('@backstage/plugin-catalog-backend'));
 backend.add(import('@backstage/plugin-catalog-backend-module-logs'));
 
+
 // permission plugin
 backend.add(import('@backstage/plugin-permission-backend'));
 backend.add(

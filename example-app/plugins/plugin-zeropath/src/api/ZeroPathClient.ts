@@ -45,7 +45,9 @@ export class ZeroPathClient implements ZeroPathApi {
       throw new Error(`ZeroPath API error: ${response.status} ${text}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log('[ZeroPath API] Response from', path, ':', JSON.stringify(data, null, 2));
+    return data;
   }
 
   async listRepositories(): Promise<ZeroPathRepository[]> {

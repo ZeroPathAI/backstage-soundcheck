@@ -12,6 +12,7 @@ export interface ZeroPathRepository {
   name?: string;
   projectId?: string | number;
   url?: string;
+  repositoryUrl?: string;
   issueCounts?: {
     open?: number;
     newOpen?: number;
@@ -23,11 +24,55 @@ export interface ZeroPathRepository {
     closed?: number;
   };
   isPrScanningEnabled?: boolean;
+  isPrScanSummaryEnabled?: boolean;
+  isVulnInfoInPRComment?: boolean;
+  showCheckStatus?: boolean;
+  isAutoGeneratePr?: boolean;
+  isAutoGeneratePrForPrScan?: boolean;
+  isAutoEnablePatchGenerationFullScan?: boolean;
+  isEnableNaturalLanguageCodeModificationPr?: boolean;
   defaultScanTargetBranch?: string;
   validationThreshold?: number;
   validationThresholdName?: 'Critical' | 'High' | 'Medium' | 'Low' | 'Info';
+  patchScoreThreshold?: number;
+  prGenerationFullScanThreshold?: number;
+  patchFullScanThreshold?: number;
+  prStatusThreshold?: number;
+  maxPrTimeoutMinutes?: number;
+  prScanIssuePrPatchGenerationThreshold?: number;
+  prScanIssuePrGenerationThreshold?: number;
+  prBranchFormat?: string | null;
+  prCommitMessageFormat?: string | null;
+  prTitleTemplate?: string | null;
+  prDescriptionTemplate?: string | null;
+  enabledSourceTypes?: string[];
+  enabledFullScanScannerTools?: string[];
+  enabledPrScanScannerTools?: string[];
+  cweWhitelist?: string[];
+  tags?: string[];
+  confidencePermissiveness?: string;
   createdAt?: string;
   lastScannedAt?: string;
+  github?: {
+    externalGithubRepositoryId?: string;
+    githubAppInstallationId?: string;
+    externalGithubAppInstallationId?: string;
+    linkActive?: boolean;
+    patLink?: boolean;
+  };
+  genericGit?: {
+    repositoryUrl?: string;
+    linkActive?: boolean;
+  };
+  scanSchedule?: {
+    id?: string;
+    executionCriteriaCrontab?: string;
+    isEnabled?: boolean;
+    scannerSettingId?: string;
+    scanBranch?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
 }
 
 /**
@@ -82,12 +127,18 @@ export interface IssueCounts {
 export interface IssueSearchResponse {
   issues: ZeroPathIssue[];
   totalCount?: number;
+  totalCountAllCategories?: number;
+  currentPage?: number;
+  pageSize?: number;
   categoryCounts?: {
     open?: number;
     patched?: number;
     falsePositive?: number;
     notExploitable?: number;
     archived?: number;
+    processing?: number;
+    silenced?: number;
+    closed?: number;
   };
 }
 

@@ -11,6 +11,7 @@ import { apis } from './apis';
 import { entityPage } from './components/catalog/EntityPage';
 import { searchPage } from './components/search/SearchPage';
 import { Root } from './components/Root';
+import { ZeroPathSecurityContent } from '@internal/plugin-zeropath';
 
 import {
   AlertDisplay,
@@ -45,6 +46,7 @@ const routes = (
     <Route path="/search" element={<SearchPage />}>
       {searchPage}
     </Route>
+    <Route path="/zeropath" element={<ZeroPathSecurityContent />} />
     <Route path="/settings" element={<UserSettingsPage />} />
   </FlatRoutes>
 );
