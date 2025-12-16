@@ -11,6 +11,7 @@
     "pluginPackages": [
       "@internal/plugin-zeropath-common",
       "@internal/plugin-zeropath",
+      "@internal/plugin-zeropath-backend",
       "@internal/backstage-soundcheck"
     ]
   },

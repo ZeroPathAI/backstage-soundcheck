@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAsync } from 'react-use';
-import { useApi } from '@backstage/core-plugin-api';
+import { useApi, configApiRef } from '@backstage/core-plugin-api';
+import { useEntity } from '@backstage/plugin-catalog-react';
 import {
   Content,
   ContentHeader,
@@ -18,16 +19,15 @@ import {
   Grid,
   Typography,
   makeStyles,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@material-ui/core';
 import LaunchIcon from '@material-ui/icons/Launch';
 import ClearIcon from '@material-ui/icons/Clear';
 import { zeroPathApiRef } from '../../api/ZeroPathApi';
 import { ZeroPathIssue, SeverityLevel, mapScoreToSeverity } from '../../api/types';
-import { ZeroPathRepository } from '@internal/plugin-zeropath-common';
+import {
+  ZeroPathRepository,
+  DEFAULT_REPOSITORY_ANNOTATION,
+} from '@internal/plugin-zeropath-common';
 import { SeverityChip } from './SeverityChip';
 import { IssueDetailsPanel } from './IssueDetailsPanel';
 import { ZeroPathInfoCard } from '../ZeroPathInfoCard';
@@ -35,7 +35,7 @@ import { ZeroPathSummaryCards } from '../ZeroPathSummaryCards';
 
 const useStyles = makeStyles(theme => ({
   root: {
-    padding: theme.spacing(2, 2, 0, 2),
+    padding: theme.spacing(0, 2, 0, 2),
   },
   cardsSection: {
     marginBottom: theme.spacing(3),
@@ -86,58 +86,82 @@ const useStyles = makeStyles(theme => ({
   tableTitleWrapper: {
     display: 'inline',
   },
-  repoSelector: {
-    marginBottom: theme.spacing(3),
-    minWidth: 300,
-  },
 }));
+
+/**
+ * Hook to get the repository from the current entity context
+ */
+function useEntityRepository() {
+  const { entity } = useEntity();
+  const api = useApi(zeroPathApiRef);
+  const configApi = useApi(configApiRef);
+
+  const annotationKey =
+    configApi.getOptionalString('zeropath.repositoryAnnotation') ??
+    DEFAULT_REPOSITORY_ANNOTATION;
+
+  const repoSlug = entity.metadata.annotations?.[annotationKey];
+
+  const { value, loading, error } = useAsync(async () => {
+    if (!repoSlug) {
+      return { repository: null, missingAnnotation: true };
+    }
+
+    // Fetch all repositories and match by name
+    const repos = await api.listRepositories();
+    const matchedRepo = repos.find(
+      (r: ZeroPathRepository) =>
+        r.repositoryName === repoSlug ||
+        r.name === repoSlug ||
+        r.repositoryName?.toLowerCase() === repoSlug.toLowerCase() ||
+        r.name?.toLowerCase() === repoSlug.toLowerCase(),
+    );
+
+    return { repository: matchedRepo ?? null, missingAnnotation: false };
+  }, [annotationKey, repoSlug, api]);
+
+  return {
+    repository: value?.repository ?? null,
+    missingAnnotation: value?.missingAnnotation ?? false,
+    loading,
+    error,
+  };
+}
 
 export const ZeroPathSecurityContent = () => {
   const classes = useStyles();
   const api = useApi(zeroPathApiRef);
-  const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<ZeroPathIssue | null>(null);
   const [selectedSeverity, setSelectedSeverity] = useState<SeverityLevel | null>(null);
 
-  // Fetch all repositories from API
+  // Get repository from entity context
   const {
-    value: repositories,
-    loading: reposLoading,
-    error: reposError,
-  } = useAsync(async () => {
-    const repos = await api.listRepositories();
-    // Auto-select first repo if none selected
-    if (repos.length > 0 && !selectedRepoId) {
-      setSelectedRepoId(String(repos[0].id));
-    }
-    return repos;
-  }, [api]);
+    repository,
+    missingAnnotation,
+    loading: repoLoading,
+    error: repoError,
+  } = useEntityRepository();
 
-  const repository = useMemo(() => {
-    if (!repositories || !selectedRepoId) return null;
-    return repositories.find(r => String(r.id) === selectedRepoId) ?? null;
-  }, [repositories, selectedRepoId]);
-
-  // Fetch open issues for selected repository
+  // Fetch open issues for the repository
   const {
     value: data,
     loading: issuesLoading,
     error: issuesError,
   } = useAsync(async () => {
-    if (!selectedRepoId) return { issues: [], total: 0 };
-    const result = await api.searchIssues(selectedRepoId, { status: ['open'] });
+    if (!repository) return { issues: [], total: 0 };
+    const result = await api.searchIssues(String(repository.id), { status: ['open'] });
     return result;
-  }, [selectedRepoId, api]);
+  }, [repository, api]);
 
-  // Fetch severity counts for selected repository
+  // Fetch severity counts for the repository
   const {
     value: severityCounts,
     loading: countsLoading,
     error: countsError,
   } = useAsync(async () => {
-    if (!selectedRepoId) return { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
-    return api.getIssueCounts(selectedRepoId);
-  }, [selectedRepoId, api]);
+    if (!repository) return { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
+    return api.getIssueCounts(String(repository.id));
+  }, [repository, api]);
 
   // Filter issues based on selected severity
   const filteredIssues = useMemo(() => {
@@ -235,10 +259,11 @@ export const ZeroPathSecurityContent = () => {
     },
   ];
 
-  const loading = reposLoading || issuesLoading || countsLoading;
-  const error = reposError || issuesError || countsError;
+  const loading = repoLoading || issuesLoading || countsLoading;
+  const error = repoError || issuesError || countsError;
 
-  if (reposLoading) {
+  // Loading state
+  if (repoLoading) {
     return (
       <Content className={classes.root}>
         <ContentHeader title="Security" />
@@ -247,6 +272,7 @@ export const ZeroPathSecurityContent = () => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <Content className={classes.root}>
@@ -256,7 +282,8 @@ export const ZeroPathSecurityContent = () => {
     );
   }
 
-  if (!repositories || repositories.length === 0) {
+  // Missing annotation state
+  if (missingAnnotation) {
     return (
       <Content className={classes.root}>
         <ContentHeader title="Security">
@@ -266,8 +293,28 @@ export const ZeroPathSecurityContent = () => {
         </ContentHeader>
         <Box className={classes.emptyStateWrapper}>
           <EmptyState
-            title="No repositories found"
-            description="No repositories are connected to ZeroPath. Connect repositories in your ZeroPath dashboard to see security issues."
+            title="Missing repository annotation"
+            description={`This entity does not have a '${DEFAULT_REPOSITORY_ANNOTATION}' annotation. Add this annotation with the repository slug (e.g., 'org/repo') to link it to ZeroPath.`}
+            missing="info"
+          />
+        </Box>
+      </Content>
+    );
+  }
+
+  // No matching repository state
+  if (!repository) {
+    return (
+      <Content className={classes.root}>
+        <ContentHeader title="Security">
+          <SupportButton>
+            View and manage security vulnerabilities detected by ZeroPath.
+          </SupportButton>
+        </ContentHeader>
+        <Box className={classes.emptyStateWrapper}>
+          <EmptyState
+            title="Repository not found in ZeroPath"
+            description="The repository annotation on this entity does not match any repository in ZeroPath. Verify the annotation value matches the repository name in ZeroPath."
             missing="data"
           />
         </Box>
@@ -308,79 +355,55 @@ export const ZeroPathSecurityContent = () => {
         </SupportButton>
       </ContentHeader>
 
-      {/* Repository Selector */}
-      <FormControl variant="outlined" className={classes.repoSelector}>
-        <InputLabel id="repo-select-label">Repository</InputLabel>
-        <Select
-          labelId="repo-select-label"
-          value={selectedRepoId || ''}
-          onChange={e => {
-            setSelectedRepoId(e.target.value as string);
-            setSelectedSeverity(null);
-          }}
-          label="Repository"
-        >
-          {repositories.map((repo: ZeroPathRepository) => (
-            <MenuItem key={String(repo.id)} value={String(repo.id)}>
-              {repo.repositoryName || repo.name} ({repo.issueCounts?.open ?? 0} open issues)
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {/* Cards Section */}
+      <Box className={classes.cardsSection}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <ZeroPathInfoCard repository={repository} />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <ZeroPathSummaryCards
+              repository={repository}
+              severityCounts={counts}
+              issues={issues}
+              selectedSeverity={selectedSeverity}
+              onSeverityClick={setSelectedSeverity}
+            />
+          </Grid>
+        </Grid>
+      </Box>
 
-      {repository && (
-        <>
-          {/* Cards Section */}
-          <Box className={classes.cardsSection}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <ZeroPathInfoCard repository={repository} />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <ZeroPathSummaryCards
-                  repository={repository}
-                  severityCounts={counts}
-                  issues={issues}
-                  selectedSeverity={selectedSeverity}
-                  onSeverityClick={setSelectedSeverity}
-                />
-              </Grid>
-            </Grid>
+      {/* Issues Table */}
+      <Box className={classes.tableSection}>
+        {loading ? (
+          <Progress />
+        ) : issues.length === 0 ? (
+          <Box className={classes.emptyStateWrapper}>
+            <EmptyState
+              title="No open issues"
+              description="ZeroPath hasn't detected any open security issues in this repository."
+              missing="data"
+            />
           </Box>
-
-          {/* Issues Table */}
-          <Box className={classes.tableSection}>
-            {loading ? (
-              <Progress />
-            ) : issues.length === 0 ? (
-              <Box className={classes.emptyStateWrapper}>
-                <EmptyState
-                  title="No open issues"
-                  description="ZeroPath hasn't detected any open security issues in this repository."
-                  missing="data"
-                />
-              </Box>
-            ) : (
-              <Box className={classes.container}>
-                <Table
-                  title={tableTitle}
-                  columns={columns}
-                  data={filteredIssues}
-                  options={{
-                    search: true,
-                    paging: true,
-                    pageSize: 20,
-                    pageSizeOptions: [10, 20, 50],
-                    sorting: true,
-                    padding: 'dense',
-                  }}
-                  onRowClick={(_, row) => row && setSelectedIssue(row)}
-                />
-              </Box>
-            )}
+        ) : (
+          <Box className={classes.container}>
+            <Table
+              title={tableTitle}
+              columns={columns}
+              data={filteredIssues}
+              options={{
+                search: true,
+                paging: true,
+                pageSize: 20,
+                pageSizeOptions: [10, 20, 50],
+                sorting: true,
+                padding: 'dense',
+              }}
+              onRowClick={(_, row) => row && setSelectedIssue(row)}
+            />
           </Box>
-        </>
-      )}
+        )}
+      </Box>
 
       {selectedIssue && (
         <IssueDetailsPanel

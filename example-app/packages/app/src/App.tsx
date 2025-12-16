@@ -9,6 +9,9 @@ import orgPlugin from '@backstage/plugin-org/alpha';
 // Import our custom ZeroPath plugin
 import zeroPathPlugin from '@internal/plugin-zeropath/alpha';
 
+// Import Soundcheck plugin
+import soundcheckPlugin from '@spotify/backstage-plugin-soundcheck/alpha';
+
 // Import custom nav module for sidebar with logo
 import { navModule } from './modules/nav';
 
@@ -23,6 +26,7 @@ const app = createApp({
     orgPlugin,
     // Custom plugins
     zeroPathPlugin,
+    soundcheckPlugin,
   ],
   bindRoutes({ bind }) {
     // Bind external routes if needed

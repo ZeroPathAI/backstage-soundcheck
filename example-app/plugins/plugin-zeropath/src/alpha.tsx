@@ -1,8 +1,6 @@
 import {
   createFrontendPlugin,
-  PageBlueprint,
   ApiBlueprint,
-  NavItemBlueprint,
   createRouteRef,
   FrontendPlugin,
 } from '@backstage/frontend-plugin-api';
@@ -15,7 +13,6 @@ import {
   fetchApiRef,
   configApiRef,
 } from '@backstage/core-plugin-api';
-import SecurityIcon from '@material-ui/icons/Security';
 import { zeroPathApiRef } from './api/ZeroPathApi';
 import { ZeroPathClient } from './api/ZeroPathClient';
 
@@ -35,29 +32,6 @@ const zeroPathApiExtension = ApiBlueprint.make({
       factory: ({ discoveryApi, fetchApi, configApi }) =>
         new ZeroPathClient({ discoveryApi, fetchApi, configApi }),
     }),
-});
-
-// Standalone Security Page Extension
-const zeroPathPageExtension = PageBlueprint.make({
-  params: {
-    path: '/zeropath',
-    routeRef: zeroPathRouteRef,
-    loader: async () => {
-      const { ZeroPathSecurityContent } = await import(
-        './components/ZeroPathSecurityContent'
-      );
-      return <ZeroPathSecurityContent />;
-    },
-  },
-});
-
-// Navigation Item Extension
-const zeroPathNavItemExtension = NavItemBlueprint.make({
-  params: {
-    title: 'Security',
-    icon: SecurityIcon,
-    routeRef: zeroPathRouteRef,
-  },
 });
 
 // Entity Card: Info Card
@@ -114,8 +88,6 @@ const zeroPathPlugin: FrontendPlugin = createFrontendPlugin({
   },
   extensions: [
     zeroPathApiExtension,
-    zeroPathPageExtension,
-    zeroPathNavItemExtension,
     zeroPathInfoCardExtension,
     zeroPathSummaryCardExtension,
     zeroPathSecurityContentExtension,

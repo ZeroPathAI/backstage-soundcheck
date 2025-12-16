@@ -19,6 +19,9 @@ backend.add(import('@backstage/plugin-auth-backend-module-guest-provider'));
 backend.add(import('@backstage/plugin-catalog-backend'));
 backend.add(import('@backstage/plugin-catalog-backend-module-logs'));
 
+// ZeroPath entity provider - auto-generates Component entities from ZeroPath repos
+backend.add(import('@internal/plugin-zeropath-backend'));
+
 
 // permission plugin
 backend.add(import('@backstage/plugin-permission-backend'));
