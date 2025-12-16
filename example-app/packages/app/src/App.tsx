@@ -1,62 +1,35 @@
-import { Navigate, Route } from 'react-router-dom';
-import {
-  CatalogEntityPage,
-  CatalogIndexPage,
-  catalogPlugin,
-} from '@backstage/plugin-catalog';
-import { orgPlugin } from '@backstage/plugin-org';
-import { SearchPage } from '@backstage/plugin-search';
-import { UserSettingsPage } from '@backstage/plugin-user-settings';
-import { apis } from './apis';
-import { entityPage } from './components/catalog/EntityPage';
-import { searchPage } from './components/search/SearchPage';
-import { Root } from './components/Root';
-import { ZeroPathSecurityContent } from '@internal/plugin-zeropath';
+import { createApp } from '@backstage/frontend-defaults';
 
-import {
-  AlertDisplay,
-  OAuthRequestDialog,
-  SignInPage,
-} from '@backstage/core-components';
-import { createApp } from '@backstage/app-defaults';
-import { AppRouter, FlatRoutes } from '@backstage/core-app-api';
+// Import plugins from their alpha exports (new frontend system)
+import catalogPlugin from '@backstage/plugin-catalog/alpha';
+import searchPlugin from '@backstage/plugin-search/alpha';
+import userSettingsPlugin from '@backstage/plugin-user-settings/alpha';
+import orgPlugin from '@backstage/plugin-org/alpha';
+
+// Import our custom ZeroPath plugin
+import zeroPathPlugin from '@internal/plugin-zeropath/alpha';
+
+// Import custom nav module for sidebar with logo
+import { navModule } from './modules/nav';
 
 const app = createApp({
-  apis,
+  features: [
+    // Custom modules (override built-in extensions)
+    navModule,
+    // Core plugins
+    catalogPlugin,
+    searchPlugin,
+    userSettingsPlugin,
+    orgPlugin,
+    // Custom plugins
+    zeroPathPlugin,
+  ],
   bindRoutes({ bind }) {
+    // Bind external routes if needed
     bind(orgPlugin.externalRoutes, {
       catalogIndex: catalogPlugin.routes.catalogIndex,
     });
   },
-  components: {
-    SignInPage: props => <SignInPage {...props} auto providers={['guest']} />,
-  },
 });
 
-const routes = (
-  <FlatRoutes>
-    <Route path="/" element={<Navigate to="catalog" />} />
-    <Route path="/catalog" element={<CatalogIndexPage />} />
-    <Route
-      path="/catalog/:namespace/:kind/:name"
-      element={<CatalogEntityPage />}
-    >
-      {entityPage}
-    </Route>
-    <Route path="/search" element={<SearchPage />}>
-      {searchPage}
-    </Route>
-    <Route path="/zeropath" element={<ZeroPathSecurityContent />} />
-    <Route path="/settings" element={<UserSettingsPage />} />
-  </FlatRoutes>
-);
-
-export default app.createRoot(
-  <>
-    <AlertDisplay />
-    <OAuthRequestDialog />
-    <AppRouter>
-      <Root>{routes}</Root>
-    </AppRouter>
-  </>,
-);
+export default app.createRoot();

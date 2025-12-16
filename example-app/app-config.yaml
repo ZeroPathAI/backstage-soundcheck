@@ -2,6 +2,32 @@ app:
   title: ZeroPath Security Demo
   baseUrl: http://localhost:3000
 
+  # Extension configuration - enable/disable and configure extensions
+  extensions:
+    # ZeroPath standalone page at /zeropath
+    - page:zeropath: true
+
+    # ZeroPath navigation item in sidebar
+    - nav-item:zeropath: true
+
+    # ZeroPath entity cards (shown on entity pages)
+    - entity-card:zeropath/info:
+        config:
+          filter:
+            kind: Component
+    - entity-card:zeropath/summary:
+        config:
+          filter:
+            kind: Component
+
+    # ZeroPath entity content tab (Security tab on entity pages)
+    - entity-content:zeropath/security:
+        config:
+          path: /security
+          title: Security
+          filter:
+            kind: Component
+
 organization:
   name: Demo
 
@@ -50,3 +76,12 @@ catalog:
 
 permission:
   enabled: true
+
+# Soundcheck configuration
+soundcheck:
+  # Load check definitions from file
+  checks:
+    $include: ./soundcheck/checks/zeropath-checks.yaml
+  # Load track definitions from file
+  tracks:
+    $include: ./soundcheck/programs/zeropath-program.yaml

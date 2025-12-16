@@ -1,0 +1,99 @@
+# ZeroPath Security Checks
+# These checks use facts collected by the ZeroPath Soundcheck collector
+
+- id: zeropath-linked
+  ownerEntityRef: group:default/security-team
+  name: ZeroPath repository linked
+  description: Ensures every component maps to a ZeroPath repository.
+  rule:
+    all:
+      - factRef: zeropath:default/is_configured
+        path: $.value
+        operator: equal
+        value: true
+  filter:
+    - kind:
+        - component
+  passedMessage: '{{ entity.metadata.name }} has a linked ZeroPath repository.'
+  failedMessage: '{{ entity.metadata.name }} needs a github.com/project-slug annotation matching the ZeroPath repository slug.'
+
+- id: zeropath-pr-scanning
+  ownerEntityRef: group:default/security-team
+  name: ZeroPath PR scanning enabled
+  description: Requires ZeroPath PR scanning to be enabled for the repository.
+  rule:
+    any:
+      - all:
+          - factRef: zeropath:default/is_configured
+            path: $.value
+            operator: equal
+            value: true
+          - factRef: zeropath:default/pr_scanning_enabled
+            path: $.value
+            operator: equal
+            value: true
+      - all:
+          - factRef: zeropath:default/is_configured
+            path: $.value
+            operator: equal
+            value: false
+  notApplicableMessage: '{{ entity.metadata.name }} is not linked to ZeroPath.'
+  filter:
+    - kind:
+        - component
+  passedMessage: '{{ entity.metadata.name }} has ZeroPath PR scanning enabled.'
+  failedMessage: '{{ entity.metadata.name }} needs ZeroPath PR scanning enabled.'
+
+- id: zeropath-critical-zero
+  ownerEntityRef: group:default/security-team
+  name: Critical ZeroPath issues remediated
+  description: Fails if ZeroPath reports any critical issues.
+  rule:
+    any:
+      - all:
+          - factRef: zeropath:default/is_configured
+            path: $.value
+            operator: equal
+            value: true
+          - factRef: zeropath:default/issues_critical_count
+            path: $.value
+            operator: lessThanInclusive
+            value: 0
+      - all:
+          - factRef: zeropath:default/is_configured
+            path: $.value
+            operator: equal
+            value: false
+  notApplicableMessage: '{{ entity.metadata.name }} is not linked to ZeroPath.'
+  filter:
+    - kind:
+        - component
+  passedMessage: '{{ entity.metadata.name }} has no critical ZeroPath issues.'
+  failedMessage: '{{ entity.metadata.name }} has critical ZeroPath issues that need remediation.'
+
+- id: zeropath-high-zero
+  ownerEntityRef: group:default/security-team
+  name: High ZeroPath issues remediated
+  description: Fails if ZeroPath reports any high severity issues.
+  rule:
+    any:
+      - all:
+          - factRef: zeropath:default/is_configured
+            path: $.value
+            operator: equal
+            value: true
+          - factRef: zeropath:default/issues_high_count
+            path: $.value
+            operator: lessThanInclusive
+            value: 0
+      - all:
+          - factRef: zeropath:default/is_configured
+            path: $.value
+            operator: equal
+            value: false
+  notApplicableMessage: '{{ entity.metadata.name }} is not linked to ZeroPath.'
+  filter:
+    - kind:
+        - component
+  passedMessage: '{{ entity.metadata.name }} has no high severity ZeroPath issues.'
+  failedMessage: '{{ entity.metadata.name }} has high severity ZeroPath issues that need remediation.'

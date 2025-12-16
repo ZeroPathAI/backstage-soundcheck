@@ -1,0 +1,32 @@
+# ZeroPath Security Posture Program
+# Ensures catalog components stay connected to ZeroPath and have no outstanding issues
+
+- id: zeropath-security-posture
+  name: ZeroPath Security Posture
+  description: Ensures catalog components stay connected to ZeroPath and have no outstanding high or critical issues.
+  ownerEntityRef: group:default/security-team
+  filter:
+    - kind:
+        - component
+  levels:
+    - ordinal: 1
+      name: Connected
+      description: Entity is linked to a ZeroPath repository.
+      checks:
+        - id: zeropath-linked
+          name: ZeroPath repository linked
+          description: Confirms the component has a matching ZeroPath repository.
+
+    - ordinal: 2
+      name: Healthy posture
+      description: ZeroPath PR scanning is enabled and there are no outstanding high or critical issues.
+      checks:
+        - id: zeropath-pr-scanning
+          name: ZeroPath PR scanning enabled
+          description: ZeroPath PR scanning is enabled for the repository.
+        - id: zeropath-critical-zero
+          name: Critical ZeroPath issues remediated
+          description: ZeroPath reports zero critical issues.
+        - id: zeropath-high-zero
+          name: High ZeroPath issues remediated
+          description: ZeroPath reports zero high severity issues.

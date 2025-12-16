@@ -1,0 +1,97 @@
+# Example entities for ZeroPath Security Demo
+# These entities have annotations that link them to ZeroPath repositories
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: example-service
+  title: Example Service
+  description: An example service demonstrating ZeroPath integration
+  annotations:
+    # This annotation links the entity to a ZeroPath repository
+    github.com/project-slug: privzpt/example-service
+  tags:
+    - python
+    - api
+spec:
+  type: service
+  lifecycle: production
+  owner: team-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: frontend-app
+  title: Frontend Application
+  description: Example frontend application
+  annotations:
+    github.com/project-slug: privzpt/frontend-app
+  tags:
+    - typescript
+    - react
+spec:
+  type: website
+  lifecycle: production
+  owner: team-frontend
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: api-gateway
+  title: API Gateway
+  description: Central API gateway service
+  annotations:
+    github.com/project-slug: privzpt/api-gateway
+  tags:
+    - go
+    - api
+spec:
+  type: service
+  lifecycle: production
+  owner: team-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: demo-system
+  title: Demo System
+  description: Demo system for ZeroPath integration
+spec:
+  owner: team-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: team-platform
+  title: Platform Team
+  description: Platform engineering team
+spec:
+  type: team
+  children: []
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: team-frontend
+  title: Frontend Team
+  description: Frontend development team
+spec:
+  type: team
+  children: []
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: security-team
+  title: Security Team
+  description: Security and compliance team
+spec:
+  type: team
+  children: []
