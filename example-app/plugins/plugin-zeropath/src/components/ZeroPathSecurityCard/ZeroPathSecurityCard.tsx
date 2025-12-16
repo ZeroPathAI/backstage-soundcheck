@@ -1,4 +1,3 @@
-import React from 'react';
 import { useAsync } from 'react-use';
 import { useEntity } from '@backstage/plugin-catalog-react';
 import { useApi } from '@backstage/core-plugin-api';

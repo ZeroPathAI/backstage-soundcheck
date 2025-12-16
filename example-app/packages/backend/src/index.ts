@@ -65,6 +65,6 @@ backend.add(import('@backstage/plugin-signals-backend'));
 
 // Soundcheck plugin with ZeroPath collector
 backend.add(import('@spotify/backstage-plugin-soundcheck-backend'));
-backend.add(import('@zeropath/backstage-soundcheck'));
+backend.add(import('@internal/backstage-soundcheck'));
 
 backend.start();

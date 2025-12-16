@@ -1,6 +1,5 @@
-import React from 'react';
 import { Chip, makeStyles } from '@material-ui/core';
-import { mapScoreToSeverity, getSeverityColor, SeverityLevel } from '../../api/types';
+import { mapScoreToSeverity, getSeverityColor } from '../../api/types';
 
 const useStyles = makeStyles(() => ({
   chip: {

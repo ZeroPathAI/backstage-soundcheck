@@ -18,11 +18,11 @@ export type {
   ZeroPathRepository,
   IssueCounts,
   SeverityLevel,
-} from '@zeropath/backstage-plugin-zeropath-common';
+} from '@internal/plugin-zeropath-common';
 
 export {
   SEVERITY_WINDOWS,
   mapScoreToSeverity,
   getSeverityColor,
   DEFAULT_REPOSITORY_ANNOTATION,
-} from '@zeropath/backstage-plugin-zeropath-common';
+} from '@internal/plugin-zeropath-common';

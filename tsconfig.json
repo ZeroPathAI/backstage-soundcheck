@@ -1,9 +1,0 @@
-{
-  "extends": "@backstage/cli/config/tsconfig.json",
-  "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "dist-types",
-    "skipLibCheck": true
-  },
-  "include": ["src"]
-}

@@ -1,5 +1,5 @@
 import { Entity } from '@backstage/catalog-model';
-import { DEFAULT_REPOSITORY_ANNOTATION } from '@zeropath/backstage-plugin-zeropath-common';
+import { DEFAULT_REPOSITORY_ANNOTATION } from '@internal/plugin-zeropath-common';
 
 /**
  * Checks if an entity has the ZeroPath repository annotation

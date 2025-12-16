@@ -5,8 +5,8 @@ import { zeroPathApiRef } from '../api/ZeroPathApi';
 import {
   DEFAULT_REPOSITORY_ANNOTATION,
   formatSlug,
-} from '@zeropath/backstage-plugin-zeropath-common';
-import type { ZeroPathRepository } from '@zeropath/backstage-plugin-zeropath-common';
+} from '@internal/plugin-zeropath-common';
+import type { ZeroPathRepository } from '@internal/plugin-zeropath-common';
 
 function getRepositorySlug(entity: Entity, annotationKey: string): string | undefined {
   return entity.metadata?.annotations?.[annotationKey];

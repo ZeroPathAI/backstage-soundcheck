@@ -61,7 +61,7 @@ import {
 import {
   ZeroPathSecurityCard,
   ZeroPathSecurityContent,
-} from '@zeropath/backstage-plugin-zeropath';
+} from '@internal/plugin-zeropath';
 
 const techdocsContent = (
   <EntityTechdocsContent>

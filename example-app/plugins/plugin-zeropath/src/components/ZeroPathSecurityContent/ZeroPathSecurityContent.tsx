@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAsync } from 'react-use';
 import { useEntity } from '@backstage/plugin-catalog-react';
 import { useApi } from '@backstage/core-plugin-api';
@@ -95,7 +95,7 @@ export const ZeroPathSecurityContent = () => {
           </Typography>
           <Typography variant="caption" color="textSecondary">
             {row.vulnCategory}
-            {row.cwes?.length > 0 && ` - ${row.cwes[0]}`}
+            {row.cwes && row.cwes.length > 0 && ` - ${row.cwes[0]}`}
           </Typography>
         </Box>
       ),
@@ -106,7 +106,7 @@ export const ZeroPathSecurityContent = () => {
       render: row => (
         <Box>
           <Typography className={classes.fileCell}>
-            {row.affectedFile.split('/').pop()}
+            {row.affectedFile?.split('/').pop()}
           </Typography>
           <Typography variant="caption" color="textSecondary">
             Line {row.startLine}
@@ -136,7 +136,7 @@ export const ZeroPathSecurityContent = () => {
     {
       title: 'Actions',
       render: row => (
-        <Link to={row.url} onClick={e => e.stopPropagation()}>
+        <Link to={row.url || '#'} onClick={e => e.stopPropagation()}>
           View <LaunchIcon className={classes.linkIcon} />
         </Link>
       ),

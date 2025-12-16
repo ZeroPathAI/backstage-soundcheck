@@ -16,7 +16,7 @@ import {
   type SeverityLevel,
   type SeveritySnapshot,
   type ZeroPathRepository as CommonZeroPathRepository,
-} from '@zeropath/backstage-plugin-zeropath-common';
+} from '@internal/plugin-zeropath-common';
 
 const COLLECTOR_ID = 'zeropath';
 const DEFAULT_SCOPE = 'default';

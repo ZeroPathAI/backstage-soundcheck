@@ -5,10 +5,10 @@ export type {
   ZeroPathRepository,
   IssueCounts,
   IssueSearchResponse,
-} from '@zeropath/backstage-plugin-zeropath-common';
+} from '@internal/plugin-zeropath-common';
 
 export {
   SEVERITY_WINDOWS,
   mapScoreToSeverity,
   getSeverityColor,
-} from '@zeropath/backstage-plugin-zeropath-common';
+} from '@internal/plugin-zeropath-common';
