@@ -16,17 +16,23 @@ import {
 import {
   Box,
   Chip,
+  Grid,
   Typography,
   makeStyles,
 } from '@material-ui/core';
 import LaunchIcon from '@material-ui/icons/Launch';
 import { zeroPathApiRef } from '../../api/ZeroPathApi';
-import { ZeroPathIssue, mapScoreToSeverity } from '../../api/types';
+import { ZeroPathIssue } from '../../api/types';
 import { useZeroPathRepository } from '../../hooks/useZeroPathRepository';
 import { SeverityChip } from './SeverityChip';
 import { IssueDetailsPanel } from './IssueDetailsPanel';
+import { ZeroPathInfoCard } from '../ZeroPathInfoCard';
+import { ZeroPathSummaryCards } from '../ZeroPathSummaryCards';
 
 const useStyles = makeStyles(theme => ({
+  topSection: {
+    marginBottom: theme.spacing(3),
+  },
   container: {
     width: '100%',
   },
@@ -45,14 +51,8 @@ const useStyles = makeStyles(theme => ({
     marginLeft: 4,
     verticalAlign: 'middle',
   },
-  summaryBox: {
-    display: 'flex',
-    gap: theme.spacing(2),
-    marginBottom: theme.spacing(2),
-    flexWrap: 'wrap',
-  },
-  summaryChip: {
-    fontWeight: 'bold',
+  issuesSection: {
+    marginTop: theme.spacing(3),
   },
 }));
 
@@ -68,13 +68,24 @@ export const ZeroPathSecurityContent = () => {
   } = useZeroPathRepository(entity);
   const [selectedIssue, setSelectedIssue] = useState<ZeroPathIssue | null>(null);
 
+  // Fetch open issues
   const {
     value: data,
-    loading,
-    error,
+    loading: issuesLoading,
+    error: issuesError,
   } = useAsync(async () => {
     if (!repository?.id) return { issues: [], total: 0 };
     return api.searchIssues(String(repository.id), { status: ['open'] });
+  }, [repository?.id, api]);
+
+  // Fetch severity counts
+  const {
+    value: severityCounts,
+    loading: countsLoading,
+    error: countsError,
+  } = useAsync(async () => {
+    if (!repository?.id) return { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
+    return api.getIssueCounts(String(repository.id));
   }, [repository?.id, api]);
 
   const columns: TableColumn<ZeroPathIssue>[] = [
@@ -165,7 +176,7 @@ export const ZeroPathSecurityContent = () => {
   if (missingAnnotation) {
     return (
       <Content>
-        <ContentHeader title="Security Issues">
+        <ContentHeader title="Security">
           <SupportButton>
             View and manage security vulnerabilities detected by ZeroPath.
           </SupportButton>
@@ -179,20 +190,23 @@ export const ZeroPathSecurityContent = () => {
     );
   }
 
-  if (repoLoading || loading) {
+  const loading = repoLoading || issuesLoading || countsLoading;
+  const error = repoError || issuesError || countsError;
+
+  if (loading) {
     return (
       <Content>
-        <ContentHeader title="Security Issues" />
+        <ContentHeader title="Security" />
         <Progress />
       </Content>
     );
   }
 
-  if (repoError || error) {
+  if (error) {
     return (
       <Content>
-        <ContentHeader title="Security Issues" />
-        <ResponseErrorPanel error={repoError || error!} />
+        <ContentHeader title="Security" />
+        <ResponseErrorPanel error={error} />
       </Content>
     );
   }
@@ -200,7 +214,7 @@ export const ZeroPathSecurityContent = () => {
   if (!repository) {
     return (
       <Content>
-        <ContentHeader title="Security Issues">
+        <ContentHeader title="Security">
           <SupportButton>
             View and manage security vulnerabilities detected by ZeroPath.
           </SupportButton>
@@ -215,82 +229,60 @@ export const ZeroPathSecurityContent = () => {
   }
 
   const issues = data?.issues ?? [];
-
-  if (issues.length === 0) {
-    return (
-      <Content>
-        <ContentHeader title="Security Issues">
-          <SupportButton>
-            View and manage security vulnerabilities detected by ZeroPath.
-          </SupportButton>
-        </ContentHeader>
-        <EmptyState
-          title="No issues found - great job!"
-          description="ZeroPath hasn't detected any open security issues in this repository. Keep up the good work!"
-          missing="data"
-        />
-      </Content>
-    );
-  }
-
-  // Calculate summary
-  const summary = issues.reduce(
-    (acc, issue) => {
-      const severity = mapScoreToSeverity(issue.score);
-      if (severity) {
-        acc[severity]++;
-      }
-      return acc;
-    },
-    { critical: 0, high: 0, medium: 0, low: 0 },
-  );
+  const counts = severityCounts ?? { critical: 0, high: 0, medium: 0, low: 0, total: 0 };
 
   return (
     <Content>
-      <ContentHeader title="Security Issues">
+      <ContentHeader title="Security">
         <SupportButton>
           View and manage security vulnerabilities detected by ZeroPath.
         </SupportButton>
       </ContentHeader>
 
-      <Box className={classes.summaryBox}>
-        <Chip
-          label={`${summary.critical} Critical`}
-          className={classes.summaryChip}
-          style={{ backgroundColor: '#d32f2f', color: '#fff' }}
-        />
-        <Chip
-          label={`${summary.high} High`}
-          className={classes.summaryChip}
-          style={{ backgroundColor: '#f57c00', color: '#fff' }}
-        />
-        <Chip
-          label={`${summary.medium} Medium`}
-          className={classes.summaryChip}
-          style={{ backgroundColor: '#fbc02d', color: '#000' }}
-        />
-        <Chip
-          label={`${summary.low} Low`}
-          className={classes.summaryChip}
-          style={{ backgroundColor: '#1976d2', color: '#fff' }}
-        />
+      {/* Top Section: Info Card + Summary Cards (Vertical Layout) */}
+      <Box className={classes.topSection}>
+        <Grid container spacing={3}>
+          {/* Info Card - Full width */}
+          <Grid item xs={12}>
+            <ZeroPathInfoCard repository={repository} />
+          </Grid>
+
+          {/* Security Issues Card - Full width */}
+          <Grid item xs={12}>
+            <ZeroPathSummaryCards
+              repository={repository}
+              severityCounts={counts}
+            />
+          </Grid>
+        </Grid>
       </Box>
 
-      <Box className={classes.container}>
-        <Table
-          title={`${data?.total ?? 0} Open Issues`}
-          columns={columns}
-          data={issues}
-          options={{
-            search: true,
-            paging: true,
-            pageSize: 20,
-            pageSizeOptions: [10, 20, 50],
-            sorting: true,
-            padding: 'dense',
-          }}
-          onRowClick={(_, row) => row && setSelectedIssue(row)}
-        />
+      {/* Issues Table */}
+      <Box className={classes.issuesSection}>
+        {issues.length === 0 ? (
+          <EmptyState
+            title="No open issues - great job!"
+            description="ZeroPath hasn't detected any open security issues in this repository. Keep up the good work!"
+            missing="data"
+          />
+        ) : (
+          <Box className={classes.container}>
+            <Table
+              title={`${data?.total ?? 0} Open Issues`}
+              columns={columns}
+              data={issues}
+              options={{
+                search: true,
+                paging: true,
+                pageSize: 20,
+                pageSizeOptions: [10, 20, 50],
+                sorting: true,
+                padding: 'dense',
+              }}
+              onRowClick={(_, row) => row && setSelectedIssue(row)}
+            />
+          </Box>
+        )}
       </Box>
 
       {selectedIssue && (

@@ -1,7 +1,6 @@
 // Plugin and components
 export {
   zeroPathPlugin,
-  ZeroPathSecurityCard,
   ZeroPathSecurityContent,
 } from './plugin';
 

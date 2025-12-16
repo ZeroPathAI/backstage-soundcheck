@@ -11,6 +11,7 @@ export interface ZeroPathRepository {
   repositoryName?: string;
   name?: string;
   projectId?: string | number;
+  url?: string;
   issueCounts?: {
     open?: number;
     newOpen?: number;
@@ -22,6 +23,11 @@ export interface ZeroPathRepository {
     closed?: number;
   };
   isPrScanningEnabled?: boolean;
+  defaultScanTargetBranch?: string;
+  validationThreshold?: number;
+  validationThresholdName?: 'Critical' | 'High' | 'Medium' | 'Low' | 'Info';
+  createdAt?: string;
+  lastScannedAt?: string;
 }
 
 /**

@@ -1,7 +1,6 @@
 import {
   createPlugin,
   createApiFactory,
-  createComponentExtension,
   createRoutableExtension,
   discoveryApiRef,
   fetchApiRef,
@@ -29,18 +28,6 @@ export const zeroPathPlugin = createPlugin({
     }),
   ],
 });
-
-export const ZeroPathSecurityCard = zeroPathPlugin.provide(
-  createComponentExtension({
-    name: 'ZeroPathSecurityCard',
-    component: {
-      lazy: () =>
-        import('./components/ZeroPathSecurityCard').then(
-          m => m.ZeroPathSecurityCard,
-        ),
-    },
-  }),
-);
 
 export const ZeroPathSecurityContent = zeroPathPlugin.provide(
   createRoutableExtension({
