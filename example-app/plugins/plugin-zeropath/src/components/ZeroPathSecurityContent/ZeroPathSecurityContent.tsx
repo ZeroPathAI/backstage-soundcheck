@@ -87,11 +87,11 @@ export const ZeroPathSecurityContent = () => {
     },
     {
       title: 'Vulnerability',
-      field: 'vulnClass',
+      field: 'generatedTitle',
       render: row => (
         <Box className={classes.vulnCell}>
           <Typography variant="body2" style={{ fontWeight: 500 }}>
-            {row.vulnClass}
+            {row.generatedTitle || row.vulnClass}
           </Typography>
           <Typography variant="caption" color="textSecondary">
             {row.vulnCategory}
@@ -131,6 +131,24 @@ export const ZeroPathSecurityContent = () => {
           color={row.status === 'open' ? 'secondary' : 'default'}
         />
       ),
+      width: '100px',
+    },
+    {
+      title: 'Created',
+      field: 'createdAt',
+      render: row => {
+        if (!row.createdAt) return '-';
+        const date = new Date(row.createdAt);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+        if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+        return `${Math.floor(diffDays / 365)} years ago`;
+      },
       width: '100px',
     },
     {
