@@ -13,7 +13,6 @@ import {
   useSidebarOpenState,
   Link,
 } from '@backstage/core-components';
-import SearchIcon from '@material-ui/icons/Search';
 import SettingsIcon from '@material-ui/icons/Settings';
 import LogoFull from '../../components/Root/LogoFull';
 import LogoIcon from '../../components/Root/LogoIcon';
@@ -51,7 +50,6 @@ const SidebarContent = ({ items }: NavContentComponentProps) => {
     <SidebarPage>
       <Sidebar>
         <SidebarLogo />
-        <SidebarItem icon={SearchIcon} to="/search" text="Search" />
         <SidebarDivider />
         {items.map(item => (
           <SidebarItem
