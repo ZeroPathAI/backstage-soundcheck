@@ -1,9 +1,7 @@
 import { Grid } from '@material-ui/core';
 import {
   EntityAboutCard,
-  EntityHasSubcomponentsCard,
   EntityLayout,
-  EntityLinksCard,
   EntitySwitch,
   EntityOrphanWarning,
   EntityProcessingErrorsPanel,
@@ -56,12 +54,6 @@ const overviewContent = (
     </Grid>
     <Grid item md={6} xs={12}>
       <ZeroPathSecurityCard />
-    </Grid>
-    <Grid item md={6} xs={12}>
-      <EntityLinksCard />
-    </Grid>
-    <Grid item md={6} xs={12}>
-      <EntityHasSubcomponentsCard variant="gridItem" />
     </Grid>
   </Grid>
 );

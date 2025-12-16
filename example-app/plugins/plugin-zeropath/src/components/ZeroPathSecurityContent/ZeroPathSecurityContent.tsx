@@ -216,6 +216,23 @@ export const ZeroPathSecurityContent = () => {
 
   const issues = data?.issues ?? [];
 
+  if (issues.length === 0) {
+    return (
+      <Content>
+        <ContentHeader title="Security Issues">
+          <SupportButton>
+            View and manage security vulnerabilities detected by ZeroPath.
+          </SupportButton>
+        </ContentHeader>
+        <EmptyState
+          title="No issues found - great job!"
+          description="ZeroPath hasn't detected any open security issues in this repository. Keep up the good work!"
+          missing="data"
+        />
+      </Content>
+    );
+  }
+
   // Calculate summary
   const summary = issues.reduce(
     (acc, issue) => {
