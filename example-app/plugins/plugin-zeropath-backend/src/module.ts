@@ -33,7 +33,7 @@ export const catalogModuleZeropathEntityProvider = createBackendModule({
           } catch (error) {
             logger.error(`ZeroPath entity provider initial fetch failed: ${error}`);
           }
-        }, 5000); // Small delay to ensure catalog is ready
+        }, 2000); // Small delay to ensure catalog is ready
 
         // Schedule periodic refresh
         await scheduler.scheduleTask({

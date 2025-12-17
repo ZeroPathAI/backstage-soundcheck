@@ -14,11 +14,13 @@ import soundcheckPlugin from '@spotify/backstage-plugin-soundcheck/alpha';
 
 // Import custom nav module for sidebar with logo
 import { navModule } from './modules/nav';
+import { rootRedirectModule } from './modules/redirectToRoot';
 
 const app = createApp({
   features: [
     // Custom modules (override built-in extensions)
     navModule,
+    rootRedirectModule,
     // Core plugins
     catalogPlugin,
     searchPlugin,

@@ -1,0 +1,48 @@
+# Backstage override configuration for your local development environment
+
+# ZeroPath API proxy configuration (for frontend plugin)
+proxy:
+  endpoints:
+    '/zeropath':
+      target: ${ZEROPATH_BASE_URL}
+      headers:
+        X-ZeroPath-API-Token-Id: ${ZEROPATH_TOKEN_ID}
+        X-ZeroPath-API-Token-Secret: ${ZEROPATH_TOKEN_SECRET}
+      changeOrigin: true
+      allowedMethods: ['GET', 'POST']
+
+# ZeroPath configuration (for frontend plugin and entity provider)
+zeropath:
+  baseUrl: ${ZEROPATH_BASE_URL}
+  organizationId: ${ZEROPATH_ORGANIZATION_ID}
+  tokenId: ${ZEROPATH_TOKEN_ID}
+  tokenSecret: ${ZEROPATH_TOKEN_SECRET}
+  # Default owner and system for auto-generated Component entities
+  defaultOwner: group:default/team-platform
+  defaultSystem: demo-system
+
+# Soundcheck with ZeroPath collector
+soundcheck:
+  license: ${SPOTIFY_SOUNDCHECK_LICENSE_KEY}
+  collectors:
+    zeropath:
+      baseUrl: ${ZEROPATH_BASE_URL}
+      organizationId: ${ZEROPATH_ORGANIZATION_ID}
+      tokenId: ${ZEROPATH_TOKEN_ID}
+      tokenSecret: ${ZEROPATH_TOKEN_SECRET}
+      frequency:
+        minutes: 30
+      initialDelay:
+        seconds: 30
+      batchSize: 50
+      cache:
+        duration:
+          hours: 1
+
+# GitHub integration for catalog
+integrations:
+  github:
+    - host: github.com
+      token: ${GITHUB_TOKEN}
+
+# Catalog configuration - entities loaded from ZeroPath API via entity provider
