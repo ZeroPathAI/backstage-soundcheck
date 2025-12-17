@@ -37,6 +37,7 @@ Open http://localhost:3000 — components auto-populate from ZeroPath repositori
 | `ZEROPATH_ORGANIZATION_ID` | Your ZeroPath org ID | Yes |
 | `ZEROPATH_TOKEN_ID` | API token ID | Yes |
 | `ZEROPATH_TOKEN_SECRET` | API token secret | Yes |
+| `SPOTIFY_SOUNDCHECK_ENABLED` | Enable Soundcheck integration | Optional |
 | `SPOTIFY_SOUNDCHECK_LICENSE_KEY` | Soundcheck license (for compliance features) | Optional |
 | `GITHUB_TOKEN` | GitHub PAT (for repo links) | Optional |
 
@@ -60,7 +61,7 @@ spec:
 
 ## Configuration Reference
 
-### app-config.local.yaml
+### app-config.yaml + app-config.local.yaml
 
 ```yaml
 # ZeroPath API proxy (frontend)
@@ -84,8 +85,11 @@ zeropath:
   defaultSystem: demo-system
 
 # Soundcheck collector (optional - for compliance)
+spotify:
+  licenseKey: ${SPOTIFY_SOUNDCHECK_LICENSE_KEY}
+
 soundcheck:
-  license: ${SPOTIFY_SOUNDCHECK_LICENSE_KEY}
+  enabled: ${SPOTIFY_SOUNDCHECK_ENABLED:-false}
   collectors:
     zeropath:
       baseUrl: ${ZEROPATH_BASE_URL}

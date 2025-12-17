@@ -21,24 +21,6 @@ zeropath:
   defaultOwner: group:default/team-platform
   defaultSystem: demo-system
 
-# Soundcheck with ZeroPath collector
-soundcheck:
-  license: ${SPOTIFY_SOUNDCHECK_LICENSE_KEY}
-  collectors:
-    zeropath:
-      baseUrl: ${ZEROPATH_BASE_URL}
-      organizationId: ${ZEROPATH_ORGANIZATION_ID}
-      tokenId: ${ZEROPATH_TOKEN_ID}
-      tokenSecret: ${ZEROPATH_TOKEN_SECRET}
-      frequency:
-        minutes: 30
-      initialDelay:
-        seconds: 30
-      batchSize: 50
-      cache:
-        duration:
-          hours: 1
-
 # GitHub integration for catalog
 integrations:
   github:

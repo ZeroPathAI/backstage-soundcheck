@@ -88,11 +88,36 @@ catalog:
 permission:
   enabled: true
 
+# Spotify plugin licensing (required for Soundcheck UI)
+spotify:
+  licenseKey: ${SPOTIFY_SOUNDCHECK_LICENSE_KEY}
+
 # Soundcheck configuration
 soundcheck:
+  # Toggle Soundcheck integration on/off in this demo
+  enabled: ${SPOTIFY_SOUNDCHECK_ENABLED:-true}
   # Load check definitions from file
   checks:
     $include: ./soundcheck/checks/zeropath-checks.yaml
   # Load track definitions from file
   tracks:
     $include: ./soundcheck/programs/zeropath-program.yaml
+  # ZeroPath collector configuration
+  collectors:
+    zeropath:
+      baseUrl: ${ZEROPATH_BASE_URL}
+      organizationId: ${ZEROPATH_ORGANIZATION_ID}
+      tokenId: ${ZEROPATH_TOKEN_ID}
+      tokenSecret: ${ZEROPATH_TOKEN_SECRET}
+      frequency:
+        minutes: 30
+      initialDelay:
+        seconds: 30
+      batchSize: 50
+      cache:
+        duration:
+          hours: 1
+      collects:
+        - filter:
+            - kind:
+                - component
